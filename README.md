@@ -6,4 +6,4 @@ KSim
 具体的操作方法请见软件说明。
 
 有关技术文档请见
-https://github.com/BlueBirdHouse/KSim
+https://www.researchgate.net/profile/Zhang_Lin32
