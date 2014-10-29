@@ -1,4 +1,6 @@
-simiam
+KSim
 ======
 
-A MATLAB-based Educational Bridge Between Theory and Practice in Robotics.
+与原版SimIam比起来，“Sim在浙江工业大学”（KSim）增加了对Khepera III机器人超声波传感器支持，并且可以将模拟环境验证过的Matlab代码直接转换为Khepera III机器人应用程序。具体的操作方法请见软件说明。
+
+更重要的是，传感器噪声特性来源于实验结果。
