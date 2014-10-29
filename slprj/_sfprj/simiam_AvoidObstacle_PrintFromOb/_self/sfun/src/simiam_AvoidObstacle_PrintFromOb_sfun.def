@@ -1,0 +1,3 @@
+LIBRARY simiam_AvoidObstacle_PrintFromOb_sfun.mexw64
+EXPORTS
+mexFunction
