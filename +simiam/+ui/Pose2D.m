@@ -2,6 +2,7 @@ classdef Pose2D < handle
     
 % Copyright (C) 2013, Georgia Tech Research Corporation
 % see the LICENSE file included with this software
+    %包含基本功能，角度转换，状态转移矩阵等等 
     
     properties
         x
@@ -33,6 +34,7 @@ classdef Pose2D < handle
         end
         
         function T = get_transformation_matrix(obj)
+            %生成对象的状态转移矩阵
             T = [ cos(obj.theta) -sin(obj.theta) obj.x;
                   sin(obj.theta)  cos(obj.theta) obj.y;
                                0               0     1];

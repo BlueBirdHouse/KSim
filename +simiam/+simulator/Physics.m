@@ -1,5 +1,5 @@
 classdef Physics < handle
-
+%检查是否有碰撞和红外线传感器接近等问题
 % Copyright (C) 2013, Georgia Tech Research Corporation
 % see the LICENSE file included with this software
     
@@ -91,7 +91,10 @@ classdef Physics < handle
                     ir = robot.ir_array(i);
                     body_ir_s = ir.surfaces.head_.key_;
                     d_min = ir.max_range;
-                    ir.update_range(d_min);
+                    
+                    %根据不同传感器改变颜色
+                    %ir.update_range(d_min);
+                    ir.update_range(d_min,i);
 
                     % check against obstacles
                     token_l = obj.world.obstacles.head_;

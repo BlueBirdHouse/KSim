@@ -27,6 +27,7 @@ classdef Supervisor < handle
         %% SUPERVISOR Constructor
             
             % initialize the controllers
+            %指定的是一个空的，什么也不做的控制器
             obj.controllers{1} = simiam.controller.Controller('default');
             
             % set the initial controller

@@ -56,7 +56,7 @@ classdef ProximitySensor < simiam.ui.Drawable
                         obj.noise_model = varargin{1};
                     else
                         obj.map = str2func(varargin{1});
-                        obj.noise_model = simiam.robot.sensor.noise.GaussianNoise(0,0.0);
+                        obj.noise_model = simiam.robot.sensor.noise.GaussianNoise(0,0);
                     end
                 case 2
                     if (isa(varargin{1}, 'simiam.robot.sensor.noise.NoiseModel'))
@@ -69,9 +69,11 @@ classdef ProximitySensor < simiam.ui.Drawable
             end
         end
                
-        function update_range(obj, distance)
-            obj.range = obj.limit_to_sensor(obj.noise_model.apply_noise(distance));            
-            distance = obj.range;
+        function update_range(obj, distance,varargin)
+            %原作者使用的是均匀分布，现在改为正态分布，作者通信后也同义这样改
+            %作者后来用一个专门的模块代表噪声
+            
+            obj.range = obj.limit_to_sensor(obj.noise_model.apply_noise(distance));
             
             r1 = distance*tan(obj.spread/4);
             r2 = distance*tan(obj.spread/2);
@@ -87,11 +89,18 @@ classdef ProximitySensor < simiam.ui.Drawable
 %             surface.geometry_ = sensor_cone*T';
             surface.update_geometry(sensor_cone*T');
             if (distance < obj.max_range)
-                set(surface.handle_, 'EdgeColor', 'r');
-                set(surface.handle_, 'FaceColor', [1 0.8 0.8]);
+                    set(surface.handle_, 'EdgeColor', 'r');
+                    set(surface.handle_, 'FaceColor', [1 0.8 0.8]);
             else
-                set(surface.handle_, 'EdgeColor', 'b')
-                set(surface.handle_, 'FaceColor', [0.8 0.8 1]);
+                %平时的时候让接近传感器为淡黄色，好看！
+                if(varargin{1} < 10)    
+                    set(surface.handle_, 'FaceColor', 'y');
+                    set(surface.handle_, 'EdgeColor', 'none')
+                else
+                    set(surface.handle_, 'FaceColor', [0.8 0.8 1]);
+                    set(surface.handle_, 'EdgeColor', 'none')
+                end
+                
             end
             obj.draw_surfaces();
         end

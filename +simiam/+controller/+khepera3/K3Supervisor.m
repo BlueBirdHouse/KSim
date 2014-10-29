@@ -94,7 +94,7 @@ classdef K3Supervisor < simiam.controller.Supervisor
                                
             obj.prev_ticks = struct('left', 0, 'right', 0);
             
-            obj.v               = 0.15;
+            obj.v               = 0.1;
             
             obj.goal            = [-1;1];
             obj.goal_prev       = obj.goal;
@@ -126,7 +126,6 @@ classdef K3Supervisor < simiam.controller.Supervisor
             inputs = obj.controllers{4}.inputs; 
             inputs.x_g = obj.goal(1);
             inputs.y_g = obj.goal(2);
-            inputs.v = obj.v;
 
             
 %             if(~all(obj.goal==obj.goal_prev))
@@ -230,9 +229,7 @@ classdef K3Supervisor < simiam.controller.Supervisor
                 
             [vel_r, vel_l] = obj.robot.dynamics.uni_to_diff(outputs.v, outputs.w);
             obj.robot.set_wheel_speeds(vel_r, vel_l);
-            
-%             fprintf('(v,w) = (%0.3f,%0.3f)\n', outputs.v, outputs.w);
-            
+                        
             obj.update_odometry();
 %             [x, y, theta] = obj.state_estimate.unpack();
 %             fprintf('current_pose: (%0.3f,%0.3f,%0.3f)\n', x, y, theta);

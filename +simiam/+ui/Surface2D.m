@@ -3,13 +3,14 @@ classdef Surface2D < handle
 % Copyright (C) 2013, Georgia Tech Research Corporation
 % see the LICENSE file included with this software
     
+%用于构成2D图形，给Drawable绘图或者给模拟器做判断
+
     properties
         centroid_
         geometry_
         handle_
         geometric_span_
         edge_set_
-        depth_
     end
     
     properties (Access = private)
@@ -32,8 +33,6 @@ classdef Surface2D < handle
             end
             obj.vertex_set_ = obj.geometry_;
             
-            obj.depth_ = 1;
-            
             % compute the surface's centroid
 %             obj.centroid_ = mean(obj.geometry_(:,1:2));
             n = size(obj.geometry_,1);
@@ -52,14 +51,8 @@ classdef Surface2D < handle
             obj.edge_set_(:,3:4) = obj.geometry_([2:n,1],1:2);
             obj.centroid_ = sum(obj.geometry_(:,1:2),1)/n;
             if(obj.is_drawable_)
-                geometry = obj.geometry_;
-                geometry(:,3) = obj.depth_;
-                set(obj.handle_, 'Vertices', geometry);
+                set(obj.handle_, 'Vertices', obj.geometry_);
             end
-        end
-        
-        function set_surface_depth(obj, depth)
-            obj.depth_ = depth;
         end
         
         function update_geometry(obj, geometry)
@@ -76,6 +69,7 @@ classdef Surface2D < handle
         end
         
         function points = intersection_with_surface(obj, surface, is_cursory)
+            %用于计算两个物体是否交错！
             edge_set_a = obj.edge_set_;
             edge_set_b = surface.edge_set_';
             

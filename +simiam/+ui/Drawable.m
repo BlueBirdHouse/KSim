@@ -3,6 +3,9 @@ classdef Drawable < handle
 % Copyright (C) 2013, Georgia Tech Research Corporation
 % see the LICENSE file included with this software
     
+%simiam.ui.Drawable is the base object for anything that can be drawn in the simulator
+%使用Surface2D最为绘图的基本单元
+
     properties
         surfaces
         parent
@@ -23,21 +26,16 @@ classdef Drawable < handle
     methods (Access = protected)
         
         function surface = add_surface(obj, geometry, color)
-            surface = obj.add_surface_with_depth(geometry, color, 1);
-        end
-        
-        function surface = add_surface_with_depth(obj, geometry, color, depth)
             surface_g = geometry;
             T = obj.pose.get_transformation_matrix();
-            geometry_t = geometry*T';
-            geometry_t(:,3) = depth;
+            %注意，这一句画出了三角形的传感器形状！
             surface_h = patch('Parent', obj.parent, ...
-                              'Vertices', geometry_t, ...
+                              'Vertices', geometry*T', ...
                               'Faces', 1:size(geometry,1), ...
                               'FaceColor', 'flat', ...
                               'FaceVertexCData', color);
+%             surface = struct('geometry', mcodekit.geometry.Surface2D(surface_g), 'handle', surface_h);
             surface = simiam.ui.Surface2D(surface_h, surface_g);
-            surface.set_surface_depth(depth);
             surface.transform_surface(T);
             obj.surfaces.append_key(surface);
         end

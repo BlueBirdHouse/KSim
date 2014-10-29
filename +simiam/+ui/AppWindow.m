@@ -34,16 +34,15 @@ classdef AppWindow < handle
         
         root_
         
+        from_simulink_
         is_state_crashed_
-        
-        origin_
     end
     
     methods
         
-        function obj = AppWindow(root, origin)
-            
-            
+        function obj = AppWindow(root, from_simulink)
+            %启动UI界面函数，构成函数，需要得到当前路径信息和是否在Simulink环境下工作
+            %输出的就是一个AppWindow对象（因为它是构成函数，所以只能输出本对象）
             obj.root_ = root;
             obj.ui_colors_ = struct('gray',  [220 220 220]/255, ...
                                     'green', [ 57 200  67]/255, ...
@@ -64,40 +63,49 @@ classdef AppWindow < handle
             
             obj.time_ = 0;
             
-            obj.origin_ = origin;
+            obj.from_simulink_ = from_simulink;
             obj.is_state_crashed_ = false;
         end
         
         function load_ui(obj)
+            %显示程序界面
             obj.create_layout();
         end
         
         function create_simulator(obj, settings_file)
-            if (strcmp(obj.origin_, 'launcher') && obj.ui_buttons_.hardware_state)
-                obj.origin_ = 'hardware';
-            end
+            %创建模拟器，输入设置文件全路径
             
+            %关键过程，创建World，在这里设置环境中的机器人数目和障碍物数目
             world = simiam.simulator.World(obj.view_);
-            world.build_from_file(obj.root_, settings_file, obj.origin_);
+            world.build_from_file(obj.root_, settings_file, obj.from_simulink_);
             
+%             token_k = world.robots.head_;
+%             while(~isempty(token_k))
             nRobots = length(world.robots);
             for k = 1:nRobots
+%                 robot = token_k.key_.robot;
                 robot = world.robots.elementAt(k).robot;
                 set(robot.surfaces.head_.key_.handle_, 'ButtonDownFcn', {@obj.ui_focus_view,robot});
                 set(robot.surfaces.tail_.key_.handle_, 'ButtonDownFcn', {@obj.ui_focus_view,robot});
+%                 token_k = token_k.next_;
             end
             
-            obj.simulator_ = simiam.simulator.Simulator(obj, world, 0.05, obj.origin_);
-            obj.ui_update(0, obj.simulator_.physics.apply_physics());
+            obj.simulator_ = simiam.simulator.Simulator(obj, world, 0.033, obj.from_simulink_);
+            obj.simulator_.step([],[]);
         end
         
         function create_layout(obj)
             
             % Create MATLAB figure
+%             obj.parent_ = figure('MenuBar', 'none', ...
+%                                  'NumberTitle', 'off', ...
+%                                  'Name', 'Sim.I.am', ...
+%                                  'Color', obj.ui_colors_.gray);
             obj.parent_ = figure('MenuBar', 'none', ...
                                  'NumberTitle', 'off', ...
-                                 'Name', 'Sim.I.am', ...
+                                 'Name', 'Sim.在浙江工业大学信息工程学院', ...
                                  'Color', obj.ui_colors_.gray);
+                             
             ui_size = get(obj.parent_, 'Position');
             ui_size(3:4) = obj.ui_size_(3:4);
             screen_size = get(0, 'ScreenSize');
@@ -118,6 +126,7 @@ classdef AppWindow < handle
             set(obj.layout_.Container, 'BackgroundColor', obj.ui_colors_.gray);
             MergeCells(obj.layout_, [2 3], [1 11]);            
             Update(obj.layout_);
+
             
             % Create UI buttons
             icon_file = fullfile(obj.root_, 'resources/splash/simiam_splash.png');
@@ -128,16 +137,16 @@ classdef AppWindow < handle
             end
             button_string = ['<html><div style="text-align: center"><img src="' icon_url '"/>' ...
                    '<br>Welcome to <b>Sim.I.am</b>, a robot simulator.' ...
-                   '<br>This is <em>Sim the Fourth</em>, your companion for control theory and robotics.' ...
+                   '<br>This is <em>Sim the Second</em>, your companion for control theory and robotics.' ...
                    '<br>The simulator is maintained by the GRITSLab at' ...
                    '<br><a href="http://gritslab.gatech.edu/projects/robot-simulator">http://gritslab.gatech.edu/projects/robot-simulator</a>' ...
-                   '</div><br><ol><li>Start by clicking the play button.</li><li>Double-click to send the red robot to a new location.</li><li>Use the mouse to pan and zoom.</li><li>Select the robot to follow it</li><li>If any robot crashes, press the rewind button.</li></ol>' ...
+                   '</div><br><ol><li>Start the demo by clicking the play button.</li><li>Use the mouse to pan and zoom.</li><li>Double click anywhere on the grid to send the robot to that location.</li><li>Select the robot to follow it</li><li>If your robot crashes, press the rewind button.</li></ol>' ...
                    '</html>'];
             ui_args = {'Style','pushbutton', 'String', button_string, 'ForegroundColor', 'w', 'FontWeight', 'bold', 'BackgroundColor', obj.ui_colors_.gray, 'Callback', @obj.ui_button_start};
             ui_parent = obj.layout_.Cell(2,1);
             obj.logo_ = uicontrol(ui_parent, ui_args{:});
-            set(obj.logo_, 'Enable', 'inactive');
-            set(findjobj(obj.logo_), 'BorderPainted', 0);
+            set(obj.logo_, 'Enable', 'off');
+            set(findjobj(obj.logo_), 'Border', []);
             set(obj.logo_, 'BackgroundColor', [96 184 206]/255);
             
             ui_args = {'Style','pushbutton', 'ForegroundColor', 'w', 'FontWeight', 'bold', 'Callback', @obj.ui_button_start};
@@ -170,41 +179,33 @@ classdef AppWindow < handle
             obj.ui_set_button_icon(zoom_out, 'ui_control_zoom_out.png');
             obj.ui_toggle_control(zoom_out, false);
             
-            ui_args = {'Style','togglebutton', 'ForegroundColor', 'w', 'FontWeight', 'bold', 'Callback', @obj.ui_button_hardware};
-            ui_parent = obj.layout_.Cell(4,7);
-            hardware = uicontrol(ui_parent, ui_args{:});
-            obj.ui_set_button_icon(hardware, 'ui_control_hardware.png');
-            obj.ui_toggle_control(hardware, true);           
             
             ui_args = {'Style', 'pushbutton', 'BackgroundColor', obj.ui_colors_.gray};
             ui_parent = obj.layout_.Cell(1,9);
             status = uicontrol(ui_parent, ui_args{:});
-            set(status, 'Enable', 'inactive');
-            set(findjobj(status), 'BorderPainted', 0);
+            set(status, 'Enable', 'off');
+            set(findjobj(status), 'Border', []);
             obj.ui_set_button_icon(status, 'ui_status_ok.png');
             
             ui_args = {'Style', 'pushbutton', 'BackgroundColor', obj.ui_colors_.gray};
             ui_parent = obj.layout_.Cell(1,10);
             clock = uicontrol(ui_parent, ui_args{:});
-            set(clock, 'Enable', 'inactive');
-            set(findjobj(clock), 'BorderPainted', 0);
+            set(clock, 'Enable', 'off');
+            set(findjobj(clock), 'Border', []);
             obj.ui_set_button_icon(clock, 'ui_status_clock.png');
             
             ui_args = {'Style', 'togglebutton', 'BackgroundColor', obj.ui_colors_.gray};
             time = uicontrol(obj.layout_.Cell(1,11), ui_args{:});
-            set(findjobj(time), 'BorderPainted', 0);
+            set(findjobj(time), 'Border', []);
             set(time, 'Value', true);
-            
-            
 
             obj.ui_buttons_ = struct('play', play, 'play_state', false, ...
-                                     'refresh', refresh, ...
-                                     'load', load, ...
-                                     'status', status, ...
-                                     'time', time, ...
-                                     'zoom_in', zoom_in, ...
-                                     'zoom_out', zoom_out, ...
-                                     'hardware', hardware, 'hardware_state', false); 
+                         'refresh', refresh, ...
+                         'load', load, ...
+                         'status', status, ...
+                         'time', time, ...
+                         'zoom_in', zoom_in, ...
+                         'zoom_out', zoom_out); 
             obj.ui_update_clock(0);
 
             % Set minimum size for figure
@@ -216,11 +217,10 @@ classdef AppWindow < handle
                               
             Update(obj.layout_);
             
-            if(strcmp(obj.origin_, 'simulink') || strcmp(obj.origin_, 'testing'))
+            if(obj.from_simulink_)
                 obj.ui_toggle_control(play, false);
                 obj.ui_toggle_control(refresh, false);
                 obj.ui_toggle_control(load, false);
-                obj.ui_toggle_control(hardware, false);
                 obj.ui_button_start([],[]);
             end
             
@@ -244,7 +244,7 @@ classdef AppWindow < handle
                 set(ui_control_button, 'Enable', 'on');
                 set(ui_control_button, 'BackgroundColor', obj.ui_colors_.dgray);
             else
-                set(ui_control_button, 'Enable', 'inactive');
+                set(ui_control_button, 'Enable', 'off');
                 set(ui_control_button, 'BackgroundColor', obj.ui_colors_.lgray);
             end
         end
@@ -271,7 +271,7 @@ classdef AppWindow < handle
             if (is_state_crashed)
                 obj.simulator_.stop();
                 obj.ui_set_button_icon(obj.ui_buttons_.status, 'ui_status_error.png');
-                if strcmp(obj.origin_, 'launcher')
+                if(~obj.from_simulink_)
                     obj.ui_toggle_control(obj.ui_buttons_.refresh, true);
                 end
                 obj.ui_toggle_control(obj.ui_buttons_.play, false);
@@ -294,14 +294,19 @@ classdef AppWindow < handle
             obj.is_state_crashed_ = false;
         end
         
-        function ui_button_hardware(obj, src, event)
-            toggle_value = get(src, 'Value');
-            obj.ui_buttons_.hardware_state = toggle_value;
-        end
-        
         function ui_button_start(obj, src, event)
+%             [filename, pathname] = uigetfile({'*.xml', 'XML file'}, 'Load a world for the simulator.');
+%             if (isequal(filename, 0) || isequal(pathname, 0))
+% %                 delete(obj.parent_);
+%                 warning('No file was selected.');
+%                 return
+%             end          
+%             simiam.ui.AppWindow().load_ui(fullfile(pathname, filename));
+%             delete(obj.parent_);
 
             % Create ui main view
+            %用户点击播放按钮以后执行的指令
+            
             delete(obj.logo_);
             view_parent = obj.layout_.Cell(2,1);
             set(view_parent, 'Children', []);
@@ -313,11 +318,11 @@ classdef AppWindow < handle
             Update(obj.layout_);            
                     
             % Target Marker
-            obj.target_marker_ = plot(obj.view_, 0, 0, ...
+            obj.target_marker_ = plot(obj.view_, -1, 1, ...
                 'Marker', 'o', ...
                 'MarkerFaceColor', obj.ui_colors_.green, ...
                 'MarkerEdgeColor', obj.ui_colors_.green, ...
-                'MarkerSize', 5);
+                'MarkerSize', 10);
             
             set(obj.view_, 'XGrid', 'on');
             set(obj.view_, 'YGrid', 'on');
@@ -339,10 +344,10 @@ classdef AppWindow < handle
             % Change ui controls
             obj.ui_toggle_control(obj.ui_buttons_.play, true);
             obj.ui_toggle_control(obj.ui_buttons_.load, false);
-            obj.ui_toggle_control(obj.ui_buttons_.hardware, false);
             
             obj.create_callbacks();
 %             obj.create_simulator(fullfile(pathname, filename));
+            %关键过程，创建模拟器，输入设置文件全路径
             obj.create_simulator(fullfile(obj.root_, 'settings.xml'));
             
             obj.ui_buttons_.play_state = true;
@@ -350,7 +355,7 @@ classdef AppWindow < handle
             set(obj.ui_buttons_.play, 'Callback', @obj.ui_button_play);
             
             obj.is_ready_ = true;
-            if strcmp(obj.origin_, 'launcher')
+            if(~obj.from_simulink_)
                 obj.ui_toggle_control(obj.ui_buttons_.load, true);
             else
                 obj.ui_toggle_control(obj.ui_buttons_.play, false);
@@ -370,7 +375,6 @@ classdef AppWindow < handle
             obj.ui_toggle_control(obj.ui_buttons_.zoom_in, false);
             obj.ui_toggle_control(obj.ui_buttons_.zoom_out, false);
             obj.ui_toggle_control(obj.ui_buttons_.refresh, false);
-            obj.ui_toggle_control(obj.ui_buttons_.hardware, true);
             obj.ui_set_button_icon(obj.ui_buttons_.status, 'ui_status_ok.png');
             obj.time_ = 0;
             obj.ui_update_clock(0);
@@ -395,13 +399,13 @@ classdef AppWindow < handle
                              '<br>This is <em>Sim the Second</em>, your companion for control theory and robotics.' ...
                              '<br>The simulator is maintained by the GRITSLab at' ...
                              '<br><a href="http://gritslab.gatech.edu/projects/robot-simulator">http://gritslab.gatech.edu/projects/robot-simulator</a>' ...
-                             '</div><br><ol><li>Start by clicking the play button.</li><li>Double-click to send the red robot to a new location.</li><li>Use the mouse to pan and zoom.</li><li>Select the robot to follow it</li><li>If any robot crashes, press the rewind button.</li></ol>' ...
+                             '</div><br><ol><li>Start the demo by clicking the play button.</li><li>Use the mouse to pan and zoom.</li><li>Double click anywhere on the grid to send the robot to that location.</li><li>Select the robot to follow it</li><li>If your robot crashes, press the rewind button.</li></ol>' ...
                              '</html>'];
             ui_args = {'Style','pushbutton', 'String', button_string, 'ForegroundColor', 'w', 'FontWeight', 'bold', 'BackgroundColor', obj.ui_colors_.gray, 'Callback', @obj.ui_button_start};
             ui_parent = obj.layout_.Cell(2,1);
             obj.logo_ = uicontrol(ui_parent, ui_args{:});
-            set(obj.logo_, 'Enable', 'inactive');
-            set(findjobj(obj.logo_), 'BorderPainted', 0);
+            set(obj.logo_, 'Enable', 'off');
+            set(findjobj(obj.logo_), 'Border', []);
             set(obj.logo_, 'BackgroundColor', [96 184 206]/255);
             
             ui_parent_size = get(ui_parent, 'Position');
@@ -465,7 +469,7 @@ classdef AppWindow < handle
             if(obj.is_ready_)
                 obj.simulator_.shutdown();
             end
-            delete(obj.parent_);
+            delete(src);
         end
         
         function ui_set_axes(obj)

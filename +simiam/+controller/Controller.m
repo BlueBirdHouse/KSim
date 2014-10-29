@@ -1,5 +1,6 @@
 classdef Controller < handle
 %% CONTROLLER is a template for all user-defined controllers.
+%一个空的控制器，默认控制器，其实就是什么也不做的控制器
 % 
 % controller Properties:
 %   type            - Name of the controller
@@ -44,10 +45,6 @@ classdef Controller < handle
         %   arguments that allow the user to define any set of inputs and
         %   outputs for the control loop.
             outputs = [];
-        end
-        
-        function reset(obj)
-            
         end
         
     end % methods

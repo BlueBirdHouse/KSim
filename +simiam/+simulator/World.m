@@ -14,13 +14,19 @@ classdef World < handle
     methods
         function obj = World(parent)
             obj.parent = parent;
+%             obj.robots = mcodekit.list.dl_list(); %struct('robot', {}, 'pose', {});
+
+            %改变了堆栈的极限大小,后来有改回去了
             obj.robots = simiam.containers.ArrayList(10);
-            obj.obstacles = mcodekit.list.dl_list();
+            %obj.robots = simiam.containers.ArrayList(30);
+            obj.obstacles = mcodekit.list.dl_list(); %struct('obstacle', {}, 'pose', {});
             obj.apps = simiam.containers.ArrayList(10);
+            %obj.apps = simiam.containers.ArrayList(30);
+            
             obj.root_path = '';
         end
         
-        function build_from_file(obj, root, file, origin)
+        function build_from_file(obj, root, file, from_simulink)
             
             % Read in XML file
             blueprint = xmlread(file);
@@ -33,7 +39,7 @@ classdef World < handle
             r = str2func(strcat('simiam.app.', app));
             obj.apps.appendElement(r(root));
             
-            if(strcmp(origin, 'launcher') || strcmp(origin, 'testing') || strcmp(origin, 'hardware'))
+            if(~from_simulink)
             
                 robot_list = blueprint.getElementsByTagName('robot');
 
@@ -42,6 +48,8 @@ classdef World < handle
 
                    type = char(robot.getAttribute('type'));
 
+                   %从XML文件里读出，机器人使用哪个控制器
+                   %getElementsByTagName是一个XML文件给的方法
                    s = robot.getElementsByTagName('supervisor').item(0);
                    spv = char(s.getAttribute('type'));
 
@@ -50,21 +58,13 @@ classdef World < handle
                    y = str2double(pose.getAttribute('y'));
                    theta = str2double(pose.getAttribute('theta'));         
 
-                   r = obj.add_robot(type, spv, x, y, theta);
-                   
-                   driver = robot.getElementsByTagName('driver').item(0);
-                   if(~isempty(driver) && strcmp(origin, 'hardware'))
-                       hostname = char(driver.getAttribute('ip'));
-                       port = str2double(driver.getAttribute('port'));
-                       r.add_hardware_link(hostname,port);
-                       r.open_hardware_link();
-                   end
+                   obj.add_robot(type, spv, x, y, theta);
                 end
             end
             
             % Parse XML file for obstacle configurations
             obstacle_list = blueprint.getElementsByTagName('obstacle');
-            
+            %关键过程，创建World，在这里设置环境中的机器人数目和障碍物数目
             for i = 0:(obstacle_list.getLength-1)
                obstacle = obstacle_list.item(i);
                

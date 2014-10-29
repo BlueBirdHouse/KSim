@@ -10,7 +10,8 @@ classdef ControlApp < handle
     
     methods
         function obj = ControlApp(root)
-            obj.supervisors = simiam.containers.ArrayList(2);
+            %obj.supervisors = simiam.containers.ArrayList(2);
+            obj.supervisors = simiam.containers.ArrayList(3);
             obj.root = root;
         end
         

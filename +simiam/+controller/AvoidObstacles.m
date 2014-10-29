@@ -16,7 +16,7 @@ classdef AvoidObstacles < simiam.controller.Controller
         
         % plot support
         p
-
+        
         % sensor geometry
         calibrated
         sensor_placement
@@ -35,39 +35,48 @@ classdef AvoidObstacles < simiam.controller.Controller
             
             obj.Kp = 5;
             obj.Ki = 0.01;
-            obj.Kd = 0.01;
+            obj.Kd = 0.1;
             
             obj.E_k = 0;
             obj.e_k_1 = 0;
+            
+%             obj.p = simiam.util.Plotter();
         end
         
         function outputs = execute(obj, robot, state_estimate, inputs, dt)
             
             % Compute the placement of the sensors
             if(~obj.calibrated)
+                %获得传感器位置信息
                 obj.set_sensor_geometry(robot);
             end
             
             % Unpack state estimate
+            %获得机器人的位姿
             [x, y, theta] = state_estimate.unpack();
             
-            % Poll the current IR sensor values 1-5
+            % Poll the current IR sensor values 1-9
             ir_distances = robot.get_ir_distances();
                         
             % Interpret the IR sensor measurements geometrically
-            ir_distances_wf = obj.apply_sensor_geometry(ir_distances, state_estimate);            
+             %将红外数据转换为世界坐标系障碍物信息
+            ir_distances_rf = obj.apply_sensor_geometry(ir_distances, state_estimate);            
             
-            % 1. Compute the heading vector for obstacle avoidance
+            % Compute the heading vector
             
-            sensor_gains = [1 1 0.5 1 1];
-            u_i = (ir_distances_wf-repmat([x;y],1,5))*diag(sensor_gains);
+            sensor_gains = [1 1 1 1 1 1 1 1 1];
+            %(ir_distances_rf-repmat([x;y],1,9))这个是以机器人为起点，以障碍物为终点的向量列
+            u_i = (ir_distances_rf-repmat([x;y],1,9))*diag(sensor_gains);
+            %u_i是给每一个障碍物向量加一个权重，正如说明书上写的
+            %然后把这些向量加起来
             u_ao = sum(u_i,2);
             
-            % 2. Compute the heading and error for the PID controller
-            theta_ao = atan2(u_ao(2),u_ao(1));
-            e_k = theta_ao-theta;
+            % Compute the heading and error for the PID controller
+            theta_o = atan2(u_ao(2),u_ao(1));%向量的方向角
+            e_k = theta_o-theta;%方向角误差
             e_k = atan2(sin(e_k),cos(e_k));
-            
+                                    
+            %只对方向角误差进行修正
             e_P = e_k;
             e_I = obj.E_k + e_k*dt;
             e_D = (e_k-obj.e_k_1)/dt;
@@ -80,10 +89,14 @@ classdef AvoidObstacles < simiam.controller.Controller
             obj.E_k = e_I;
             obj.e_k_1 = e_k;
                         
-            % plot  
-            obj.p.plot_2d_ref(dt, theta, theta_ao, 'g');
-                        
+            % plot
+            obj.p.plot_2d_ref(dt, atan2(sin(theta),cos(theta)), theta_o, 'g');
+            
 %             fprintf('(v,w) = (%0.4g,%0.4g)\n', v,w);
+            
+            % velocity control
+
+            v =  0.25/(log(abs(w)+2)+1); % = inputs.v;
 
             outputs.v = v;
             outputs.w = w;
@@ -91,33 +104,34 @@ classdef AvoidObstacles < simiam.controller.Controller
         
         % Helper functions
         
-        function ir_distances_wf = apply_sensor_geometry(obj, ir_distances, state_estimate)
+        function ir_distances_rf = apply_sensor_geometry(obj, ir_distances, state_estimate)
                     
-            % 1. Apply the transformation to robot frame.
+            % Apply the transformation to robot frame.
+            %将红外数据转换为世界坐标系障碍物信息
             
-            ir_distances_rf = zeros(3,5);
-            for i=1:5
+            ir_distances_sf = zeros(3,9);
+            for i=1:9
                 x_s = obj.sensor_placement(1,i);
                 y_s = obj.sensor_placement(2,i);
                 theta_s = obj.sensor_placement(3,i);
                 
                 R = obj.get_transformation_matrix(x_s,y_s,theta_s);
-                ir_distances_rf(:,i) = R*[ir_distances(i); 0; 1];
+                ir_distances_sf(:,i) = R*[ir_distances(i); 0; 1];
             end
             
-            % 2. Apply the transformation to world frame.
+            % Apply the transformation to world frame.
             
             [x,y,theta] = state_estimate.unpack();
             
             R = obj.get_transformation_matrix(x,y,theta);
-            ir_distances_wf = R*ir_distances_rf;
+            ir_distances_rf = R*ir_distances_sf;
             
-            ir_distances_wf = ir_distances_wf(1:2,:);
+            ir_distances_rf = ir_distances_rf(1:2,:);
         end
         
         function set_sensor_geometry(obj, robot)
-            obj.sensor_placement = zeros(3,5);
-            for i=1:5
+            obj.sensor_placement = zeros(3,9);
+            for i=1:9
                 [x, y, theta] = robot.ir_array(i).location.unpack();
                 obj.sensor_placement(:,i) = [x; y; theta];
             end                        
@@ -126,12 +140,6 @@ classdef AvoidObstacles < simiam.controller.Controller
         
         function R = get_transformation_matrix(obj, x, y, theta)
             R = [cos(theta) -sin(theta) x; sin(theta) cos(theta) y; 0 0 1];
-        end
-        
-        function reset(obj)
-            % Reset accumulated and previous error
-            obj.E_k = 0;
-            obj.e_k_1 = 0;
         end
         
     end

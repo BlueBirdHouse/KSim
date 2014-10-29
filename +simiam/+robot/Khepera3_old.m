@@ -16,7 +16,7 @@ classdef Khepera3 < simiam.robot.Robot
         %定义使用的编码器和传感器
         encoders = simiam.robot.sensor.WheelEncoder.empty(1,0);
         ir_array = simiam.robot.sensor.ProximitySensor.empty(1,0);
-                
+        
         dynamics
         
         %显示这个机器人在模拟器里面的位置
@@ -124,16 +124,13 @@ classdef Khepera3 < simiam.robot.Robot
             %在构成函数里面初始化pose
             obj.robotKhepera3_pose = pose;
             
-            %添加可以被显示的超声波传感器
-            for counter = 1:5
-                ModelUltrasonicSensor = simiam.robot.sensor.UltrasonicSensor(1);
-                ir_pose = ModelUltrasonicSensor.location_List(counter,:);
-                ir_pose = Pose2D(ir_pose(1,1), ir_pose(1,2), ir_pose(1,3));
-                obj.ir_array(counter+9) = ProximitySensor(parent, 'IR', pose, ir_pose, 0.02, 0.2, Pose2D.deg2rad(30), 'simiam.robot.Khepera3.ir_distance_to_raw', noise_model);
-            end
-            %测试使用EKF
-            obj.Filter = simiam.robot.Filters.EKF('Khepera3',[pose.x pose.y pose.theta]',zeros(3,3),obj.wheel_radius,obj.wheel_base_length);
-
+%             %添加超声波传感器
+%             obj.US_array(1) = UltrasonicSensor(1);
+%             obj.US_array(2) = UltrasonicSensor(2);
+%             obj.US_array(3) = UltrasonicSensor(3);
+%             obj.US_array(4) = UltrasonicSensor(4);
+%             obj.US_array(5) = UltrasonicSensor(5);
+%             Temp = 0;
         end
         
         function ir_distances = get_ir_distances(obj)
@@ -150,15 +147,8 @@ classdef Khepera3 < simiam.robot.Robot
             vel_r = obj.right_wheel_speed*(sf/R);     % mm/s
             vel_l = obj.left_wheel_speed*(sf/R);      % mm/s
             
-            %在这里将滤波器的系统噪声加入到其中
-            SYS_Noise = obj.Filter.Q;
-            pose.x = pose.x + normrnd(0,sqrt(SYS_Noise(1,1)),[1 1]);
-            pose.y = pose.y + normrnd(0,sqrt(SYS_Noise(2,2)),[1 1]);
-            pose.theta = pose.theta + normrnd(0,sqrt(SYS_Noise(3,3)),[1 1]);
-            
-            %这里预测下一步动态
             pose = obj.dynamics.apply_dynamics(pose, dt, vel_r, vel_l);
-            obj.update_pose(pose);%这是Doawable属性，目的是将物理计算的结果反映到图像演示当中去
+            obj.update_pose(pose);
             
             for k=1:length(obj.ir_array)
                 obj.ir_array(k).update_pose(pose);
@@ -175,24 +165,6 @@ classdef Khepera3 < simiam.robot.Robot
             obj.encoders(2).update_ticks(vel_l, dt);
             
             obj.robotKhepera3_pose = pose;
-            
-            %下面加入滤波器运算逻辑
-            %首先生成滤波器需要的控制信号：
-            EKF_u = obj.Filter.Prediction_u_Maker(dt,vel_r,vel_l);%产生滤波器需要使用的驱动信息
-            obj.Filter.Prediction_Pose_EKF(EKF_u);%预测位姿
-            obj.Filter.Prediction_Variance_EKF();%预测方差
-            obj.Filter.Obstacle_Visible(pose);%利用预测查询地图，观测那些障碍物可见
-            obj.Filter.Pseudo_observation(pose);%根据预测的可见障碍物，产生伪观测信息
-            obj.Filter.Guess_Data_MeanVariance();%根据伪观测信息，产生应有的噪声信息（包括模拟需要的噪声）
-            obj.Filter.InnovationMaker(true);%true:产生用于模拟的新息
-            obj.Filter.Match(true);%做匹配操作
-            obj.Filter.Estimate();%生成估计
-            
-            obj.Filter.Temp_ObservationShow();%显示观测数据库信息
-            obj.Filter.ShowObject();%在屏幕上打印观测到的障碍物
-            obj.Filter.CleanAllObstacleData();%清楚掉ObstacleData
-            
-            Temp = 0;
         end
         
         function set_wheel_speeds(obj, vel_r, vel_l)
