@@ -1,7 +1,9 @@
 KSim
 ======
 
-ÓëÔ­°æSimIam±ÈÆðÀ´£¬¡°SimÔÚÕã½­¹¤Òµ´óÑ§¡±£¨KSim£©Ôö¼ÓÁË¶ÔKhepera III»úÆ÷ÈË³¬Éù²¨´«¸ÐÆ÷Ö§³Ö£¬²¢ÇÒ¿ÉÒÔ½«Ä£Äâ»·¾³ÑéÖ¤¹ýµÄMatlab´úÂëÖ±½Ó×ª»»ÎªKhepera III»úÆ÷ÈËÓ¦ÓÃ³ÌÐò¡£´øÓÐ¿¨¶ûÂüÂË²¨ºÍ¶àÖÇÄÜÌå±à¶ÓµÈ¶àÖÖÓ¦ÓÃÊµÀý¡£ÎÒÃÇµÄ´«¸ÐÆ÷ÔëÉùÌØÐÔÀ´Ô´ÓÚÊµÑé½á¹û¡£
+ä¸ŽåŽŸç‰ˆSimIamæ¯”èµ·æ¥ï¼Œâ€œSimåœ¨æµ™æ±Ÿå·¥ä¸šå¤§å­¦â€ï¼ˆKSimï¼‰å¢žåŠ äº†å¯¹Khepera IIIæœºå™¨äººè¶…å£°æ³¢ä¼ æ„Ÿå™¨æ”¯æŒï¼Œå¹¶ä¸”å¯ä»¥å°†æ¨¡æ‹ŸçŽ¯å¢ƒéªŒè¯è¿‡çš„Matlabä»£ç ç›´æŽ¥è½¬æ¢ä¸ºKhepera IIIæœºå™¨äººåº”ç”¨ç¨‹åºã€‚å¸¦æœ‰å¡å°”æ›¼æ»¤æ³¢å’Œå¤šæ™ºèƒ½ä½“ç¼–é˜Ÿç­‰å¤šç§åº”ç”¨å®žä¾‹ã€‚æˆ‘ä»¬çš„ä¼ æ„Ÿå™¨å™ªå£°ç‰¹æ€§æ¥æºäºŽå®žéªŒç»“æžœã€‚
 
-¾ßÌåµÄ²Ù×÷·½·¨Çë¼ûÈí¼þËµÃ÷¡£
+å…·ä½“çš„æ“ä½œæ–¹æ³•è¯·è§è½¯ä»¶è¯´æ˜Žã€‚
 
+æœ‰å…³æŠ€æœ¯æ–‡æ¡£è¯·è§
+https://github.com/BlueBirdHouse/KSim
